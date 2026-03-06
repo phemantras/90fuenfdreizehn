@@ -30,8 +30,8 @@ const storyCards = [
 
 const faqItems = [
   {
-    title: "Ist das fuer alle Zirndorfer?",
-    text: "Ja. Genau das ist die Idee: eine Marke, die jede:r tragen kann - und sich trotzdem besonders anfuehlt.",
+    title: "Ist das nur fuer Zirndorfer?",
+    text: "Nein! Jeder, der Zirndorf im Herzen traegt, ist willkommen. Es geht um die Liebe zur Stadt, nicht um den Pass.",
   },
   {
     title: "Versand & Rueckgabe?",
