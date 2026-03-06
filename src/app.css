@@ -48,9 +48,14 @@
   --accent-red: #ff0000;
   --accent-green: #009a00;
   --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.25);
+  --anchor-offset: 96px;
   --font-base: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-display: "Resamitz", "Avenir Next", "Segoe UI", "Trebuchet MS", Arial, sans-serif;
   --font-display-bold: "Resamitz Bold", "Resamitz", "Avenir Next", "Segoe UI", "Trebuchet MS", Arial, sans-serif;
+}
+
+html {
+  scroll-padding-top: var(--anchor-offset);
 }
 
 .app-shell {
@@ -89,16 +94,33 @@
 }
 
 .container {
-  width: min(1100px, 92%);
+  width: min(1100px, 98%);
   margin: 0 auto;
 }
 
 .section {
   padding: 64px 0;
+  scroll-margin-top: var(--anchor-offset);
 }
 
 .section--hero {
   padding: 80px 0 0;
+}
+
+main,
+main * {
+  border: none !important;
+}
+
+main * {
+  background-image: none !important;
+}
+
+main article {
+  border: none !important;
+  width: 98%;
+  max-width: none;
+  margin-inline: auto;
 }
 
 .hero-placeholder {
@@ -163,12 +185,14 @@
   font-weight: 900;
   font-family: var(--font-display);
   letter-spacing: 0.01em;
+  text-align: center;
 }
 
 .section-header p {
   margin: 8px 0 0;
   color: var(--text-muted);
   line-height: 1.7;
+  text-align: center;
 }
 
 .topbar {
@@ -446,7 +470,6 @@ strong {
 
 .spreadshop-mount {
   min-height: 800px;
-  padding: 24px;
 }
 
 .spreadshop-hint {

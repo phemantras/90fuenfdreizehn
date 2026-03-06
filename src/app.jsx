@@ -28,25 +28,6 @@ const storyCards = [
   },
 ];
 
-const faqItems = [
-  {
-    title: "Ist das nur fuer Zirndorfer?",
-    text: "Nein! Jeder, der Zirndorf im Herzen traegt, ist willkommen. Es geht um die Liebe zur Stadt, nicht um den Pass.",
-  },
-  {
-    title: "Versand & Rueckgabe?",
-    text: "Produktion und Versand laufen ueber Spreadshirt. Rueckgabe in der Regel 30 Tage (Details im Shop).",
-  },
-  {
-    title: "Warum \"90513\"?",
-    text: "Weil es ein Code ist. Ein stilles Zeichen fuer Zugehoerigkeit - fuer Buerger und Fans der Stadt.",
-  },
-  {
-    title: "Kann ich mitmachen / collab?",
-    text: "Ja: lokale Vereine, Bars, Crews, Fotografen. (Platzhalter: Kontaktformular/DM.)",
-  },
-];
-
 function Placeholder({ label, height = 280 }) {
   return (
     <div className="placeholder" style={{ "--placeholder-height": `${height}px` }}>
@@ -137,7 +118,7 @@ function SpreadshopSection() {
       <div className="container">
         <header className="section-header">
           <h2 id="shop-title">Shop</h2>
-          <p>Offizieller Spreadshop - eingebettet in unsere Brand-Seite.</p>
+          <p>Get your gear now!</p>
         </header>
 
         <div className="card card--flush">
@@ -160,6 +141,23 @@ export default function App() {
   const heroTitleRef = useRef(null);
 
   const closeMenu = () => setIsMenuOpen(false);
+  const handleNavClick = (event, targetId) => {
+    event.preventDefault();
+    closeMenu();
+
+    const target = document.getElementById(targetId);
+    if (!target) {
+      return;
+    }
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const behavior = prefersReducedMotion ? "auto" : "smooth";
+
+    requestAnimationFrame(() => {
+      target.scrollIntoView({ behavior, block: "start" });
+      window.history.replaceState(null, "", `#${targetId}`);
+    });
+  };
 
   useLayoutEffect(() => {
     const container = heroPlaceholderRef.current;
@@ -238,17 +236,14 @@ export default function App() {
             className={`topnav ${isMenuOpen ? "topnav--open" : ""}`}
             aria-label="Hauptnavigation"
           >
-            <a href="#story" onClick={closeMenu}>
+            <a href="#story" onClick={(event) => handleNavClick(event, "story")}>
               Story
             </a>
-            <a href="#community" onClick={closeMenu}>
+            <a href="#community" onClick={(event) => handleNavClick(event, "community")}>
               Community
             </a>
-            <a href="#shop" onClick={closeMenu}>
+            <a href="#shop" onClick={(event) => handleNavClick(event, "shop")}>
               Shop
-            </a>
-            <a href="#faq" onClick={closeMenu}>
-              FAQ
             </a>
           </nav>
         </div>
@@ -316,23 +311,6 @@ export default function App() {
 
         <SpreadshopSection />
 
-        <section id="faq" className="section" aria-labelledby="faq-title">
-          <div className="container">
-            <header className="section-header">
-              <h2 id="faq-title">FAQ</h2>
-              <p>Kurz & klar - reduziert Kauf-Friktion.</p>
-            </header>
-
-            <div className="grid grid--2">
-              {faqItems.map((item) => (
-                <article className="card" key={item.title}>
-                  <h3>{item.title}</h3>
-                  <p>{item.text}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
       </main>
 
       <footer className="footer">
@@ -350,7 +328,6 @@ export default function App() {
               <a href="#shop">Shop</a>
               <a href="#story">Story</a>
               <a href="#community">Community</a>
-              <a href="#faq">FAQ</a>
             </div>
 
             <div>
