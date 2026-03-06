@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import "./app.css";
 
 const SPREADSHOP = {
@@ -12,17 +12,17 @@ const SPREADSHOP = {
 
 const storyCards = [
   {
-    title: "Der Code",
+    title: "> Der Code",
     text: "90513 ist mehr als eine PLZ. Es ist ein Zeichen: \"Ich bin von hier.\" Ohne grosse Worte.",
     placeholder: "BILD PLATZHALTER (PLZ/Sign/Sticker in der Stadt)",
   },
   {
-    title: "Die Haltung",
+    title: "> Die Haltung",
     text: "Stolz, aber nicht laut. Lokal, aber offen. Fuer alle, die Zirndorf im Herzen haben.",
     placeholder: "BILD PLATZHALTER (Menschen in Alltagsszenen)",
   },
   {
-    title: "Das Mitnehmen",
+    title: "> Das Mitnehmen",
     text: "Gaeste nehmen ein Stueck Zirndorf mit - Buerger tragen es jeden Tag.",
     placeholder: "BILD PLATZHALTER (Souvenir vibe: Cap/Bag/Sticker)",
   },
@@ -88,6 +88,7 @@ function InstagramPost({ permalink }) {
       data-instgrm-captioned
       data-instgrm-permalink={permalink}
       data-instgrm-version="14"
+      data-instgrm-theme="dark"
     >
       <a href={permalink} target="_blank" rel="noreferrer">
         Beitrag auf Instagram ansehen
@@ -155,8 +156,61 @@ function SpreadshopSection() {
 export default function App() {
   const currentYear = new Date().getFullYear();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const heroPlaceholderRef = useRef(null);
+  const heroTitleRef = useRef(null);
 
   const closeMenu = () => setIsMenuOpen(false);
+
+  useLayoutEffect(() => {
+    const container = heroPlaceholderRef.current;
+    const title = heroTitleRef.current;
+
+    if (!container || !title) {
+      return;
+    }
+
+    const fitTitleToContainer = () => {
+      const viewportWidth = window.visualViewport?.width ?? window.innerWidth;
+      const styles = window.getComputedStyle(container);
+      const paddingX = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
+      const containerWidth = Math.max(0, container.clientWidth - paddingX);
+      const maxWidth = Math.min(containerWidth, Math.floor(viewportWidth * 0.98));
+      const minFontSize = 16;
+      const maxFontSize = 220;
+
+      let low = minFontSize;
+      let high = maxFontSize;
+      let best = minFontSize;
+
+      while (low <= high) {
+        const mid = Math.floor((low + high) / 2);
+        title.style.fontSize = `${mid}px`;
+
+        if (title.scrollWidth <= maxWidth) {
+          best = mid;
+          low = mid + 1;
+        } else {
+          high = mid - 1;
+        }
+      }
+
+      title.style.fontSize = `${best}px`;
+    };
+
+    fitTitleToContainer();
+    document.fonts?.ready.then(fitTitleToContainer).catch(() => {});
+
+    const observer = new ResizeObserver(fitTitleToContainer);
+    observer.observe(container);
+    window.addEventListener("resize", fitTitleToContainer);
+    window.visualViewport?.addEventListener("resize", fitTitleToContainer);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", fitTitleToContainer);
+      window.visualViewport?.removeEventListener("resize", fitTitleToContainer);
+    };
+  }, []);
 
   return (
     <div className="app-shell">
@@ -202,43 +256,12 @@ export default function App() {
 
       <main id="top">
         <section className="section section--hero" aria-labelledby="hero-title">
-          <div className="container hero-grid">
-            <div>
-              <p className="kicker">AUS ZIRNDORF. FUER ZIRNDORF.</p>
-              <h1 id="hero-title">
-                Eine Marke fuer alle,
-                <br />
-                die <span className="accent">90513</span> fuehlen.
-              </h1>
-              <p className="lead">
-                Nicht exklusiv - aber du fuehlst dich so. Weil du dazugehoerst. Fuer Zirndorfer Buerger und
-                fuer alle, die Zirndorf mitnehmen wollen.
-              </p>
-
-              <div className="actions">
-                <a className="button button--primary" href="#shop">
-                  Shop the City
-                </a>
-                <a className="button button--secondary" href="#story">
-                  Unsere Story
-                </a>
-              </div>
-
-              <div className="trust-row" aria-label="Vorteile">
-                <span className="trust-pill">30 Tage Rueckgabe</span>
-                <span className="trust-pill">Produktion & Versand: Spreadshirt</span>
-                <span className="trust-pill">Fuer Buerger & Gaeste</span>
-              </div>
-            </div>
-
-            <div>
-              <Placeholder label="HERO VIDEO PLATZHALTER (Zirndorf Montage)" height={420} />
-              <div className="spacer" />
-              <div className="grid grid--2">
-                <Placeholder label="BILD PLATZHALTER (Street / Altstadt)" height={160} />
-                <Placeholder label="BILD PLATZHALTER (Leute / Community)" height={160} />
-              </div>
-            </div>
+          <div className="hero-placeholder" role="img" aria-label="Hero Platzhalter" ref={heroPlaceholderRef}>
+            <h1 id="hero-title" className="hero-placeholder__title" ref={heroTitleRef}>
+              <span className="hero-placeholder__base">90</span>
+              <span className="hero-placeholder__strong">FUENF</span>
+              <span className="hero-placeholder__base">DREIZEHN</span>
+            </h1>
           </div>
         </section>
 
@@ -264,15 +287,14 @@ export default function App() {
         <section id="community" className="section" aria-labelledby="community-title">
           <div className="container">
             <header className="section-header">
-              <h2 id="community-title">Zirndorfer tragen 90513</h2>
-              <p>UGC / Insta-Feed / echte Menschen. Das ist Social Proof und macht aus Kaeufern Botschafter.</p>
+              <h2 id="community-title">Zirndorfer tragen 90FuenfDreizehn</h2>
             </header>
 
             <article className="card">
               <div className="community-head">
                 <div>
                   <h3>#90FuenfDreizehn</h3>
-                  <p>Poste dein Outfit in Zirndorf und tagge uns - wir featuren jede Woche die besten Looks.</p>
+                  <p>Poste dein Outfit in Zirndorf und tagge uns! Werde Teil der Community!</p>
                 </div>
                 <a className="button button--secondary" href="#shop">
                   Jetzt mitmachen
@@ -280,7 +302,7 @@ export default function App() {
               </div>
 
               <div className="grid grid--community">
-                <InstagramPost permalink="https://www.instagram.com/p/DVWrnTcjjFa/?utm_source=ig_embed&utm_campaign=loading" />
+                <InstagramPost permalink="https://www.instagram.com/p/DVWrnTcjjFa/?utm_source=ig_embed&utm_campaign=loading?theme=dark" />
                 <InstagramPost permalink="https://www.instagram.com/p/DVWsWWHjnOE/?utm_source=ig_embed&utm_campaign=loading" />
                 <Placeholder label="INSTAGRAM POST PLATZHALTER 3" height={220} />
                 <Placeholder label="INSTAGRAM POST PLATZHALTER 4" height={220} />
