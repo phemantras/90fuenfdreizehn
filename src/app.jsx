@@ -282,7 +282,11 @@ export default function App() {
               <div className="container">
                 <header className="section-header">
                   <h2 id="aboutus-title">About us</h2>
-                  <p>Eine Identitaetsmarke: Zuhause tragen. Zirndorf zeigen. Zusammen gehoeren.</p>
+                  <p>
+                    Aus 90513. Fuer 90513. Drei Farben. Drei Spitzen. Eine Haltung. Wir tragen, wo wir herkommen.
+                    <br />
+                    - Repraesentiere deine Stadt -
+                  </p>
                 </header>
 
                 <div className="grid grid--3">
