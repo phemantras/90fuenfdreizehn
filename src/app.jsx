@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./app.css";
 
 const SPREADSHOP = {
@@ -22,8 +22,8 @@ const storyCards = [
     placeholder: "BILD PLATZHALTER (Menschen in Alltagsszenen)",
   },
   {
-    title: "> Das Mitnehmen",
-    text: "Gaeste nehmen ein Stueck Zirndorf mit - Buerger tragen es jeden Tag.",
+    title: "> Die Verbindung",
+    text: "Egal, ob Buerger oder Gast - du bleibst mit Zirndorf verbunden.",
     placeholder: "BILD PLATZHALTER (Souvenir vibe: Cap/Bag/Sticker)",
   },
 ];
@@ -78,7 +78,7 @@ function InstagramPost({ permalink }) {
   );
 }
 
-function SpreadshopSection() {
+function SpreadshopSection({ showHeader = true, isShopPage = false }) {
   const config = useMemo(
     () => ({
       shopName: SPREADSHOP.shopName,
@@ -114,21 +114,36 @@ function SpreadshopSection() {
   }, [config]);
 
   return (
-    <section id="shop" className="section" aria-labelledby="shop-title">
+    <section
+      id="shop"
+      className={`section ${isShopPage ? "section--shop-page" : ""}`}
+      aria-labelledby="shop-title"
+    >
       <div className="container">
-        <header className="section-header">
-          <h2 id="shop-title">Shop</h2>
-          <p>Get your gear now!</p>
-        </header>
+        {showHeader ? (
+          <header className="section-header">
+            <h2 id="shop-title">Shop</h2>
+            <p>Get your gear now!</p>
+          </header>
+        ) : null}
 
-        <div className="card card--flush">
+        {isShopPage ? (
           <div id="myShop" className="spreadshop-mount" role="region" aria-label="Spreadshop">
             <a href={SPREADSHOP.prefix}>{SPREADSHOP.shopName}</a>
             <p className="spreadshop-hint">
               Falls der Shop beim lokalen Dev-Start kurz laedt: normal - Script wird nachgeladen.
             </p>
           </div>
-        </div>
+        ) : (
+          <div className="card card--flush">
+            <div id="myShop" className="spreadshop-mount" role="region" aria-label="Spreadshop">
+              <a href={SPREADSHOP.prefix}>{SPREADSHOP.shopName}</a>
+              <p className="spreadshop-hint">
+                Falls der Shop beim lokalen Dev-Start kurz laedt: normal - Script wird nachgeladen.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -137,8 +152,9 @@ function SpreadshopSection() {
 export default function App() {
   const currentYear = new Date().getFullYear();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const heroPlaceholderRef = useRef(null);
-  const heroTitleRef = useRef(null);
+  const pathname = window.location.pathname;
+  const normalizedPath = pathname !== "/" && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
+  const isShopPage = normalizedPath === "/shop";
 
   const closeMenu = () => setIsMenuOpen(false);
   const handleNavClick = (event, targetId) => {
@@ -159,64 +175,17 @@ export default function App() {
     });
   };
 
-  useLayoutEffect(() => {
-    const container = heroPlaceholderRef.current;
-    const title = heroTitleRef.current;
-
-    if (!container || !title) {
-      return;
-    }
-
-    const fitTitleToContainer = () => {
-      const viewportWidth = window.visualViewport?.width ?? window.innerWidth;
-      const styles = window.getComputedStyle(container);
-      const paddingX = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
-      const containerWidth = Math.max(0, container.clientWidth - paddingX);
-      const maxWidth = Math.min(containerWidth, Math.floor(viewportWidth * 0.98));
-      const minFontSize = 16;
-      const maxFontSize = 220;
-
-      let low = minFontSize;
-      let high = maxFontSize;
-      let best = minFontSize;
-
-      while (low <= high) {
-        const mid = Math.floor((low + high) / 2);
-        title.style.fontSize = `${mid}px`;
-
-        if (title.scrollWidth <= maxWidth) {
-          best = mid;
-          low = mid + 1;
-        } else {
-          high = mid - 1;
-        }
-      }
-
-      title.style.fontSize = `${best}px`;
-    };
-
-    fitTitleToContainer();
-    document.fonts?.ready.then(fitTitleToContainer).catch(() => {});
-
-    const observer = new ResizeObserver(fitTitleToContainer);
-    observer.observe(container);
-    window.addEventListener("resize", fitTitleToContainer);
-    window.visualViewport?.addEventListener("resize", fitTitleToContainer);
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", fitTitleToContainer);
-      window.visualViewport?.removeEventListener("resize", fitTitleToContainer);
-    };
-  }, []);
-
   return (
     <div className="app-shell">
       <header className="topbar">
         <div className="container topbar__inner">
-          <a className="brand" href="#top" aria-label="Startseite 90FuenfDreizehn">
-            <img src="/logo_light.png" alt="90FuenfDreizehn" className="brand__logo brand__logo--nav" />
-          </a>
+          {isShopPage ? (
+            <div className="topbar__shop-title">Shop - Get your gear now!</div>
+          ) : (
+            <a className="brand" href="#top" aria-label="Startseite 90FuenfDreizehn" onClick={closeMenu}>
+              <img src="/logo_light.png" alt="90FuenfDreizehn" className="brand__logo brand__logo--nav" />
+            </a>
+          )}
 
           <button
             type="button"
@@ -236,113 +205,140 @@ export default function App() {
             className={`topnav ${isMenuOpen ? "topnav--open" : ""}`}
             aria-label="Hauptnavigation"
           >
-            <a href="#story" onClick={(event) => handleNavClick(event, "story")}>
-              Story
-            </a>
-            <a href="#community" onClick={(event) => handleNavClick(event, "community")}>
-              Community
-            </a>
-            <a href="#shop" onClick={(event) => handleNavClick(event, "shop")}>
-              Shop
-            </a>
+            {isShopPage ? (
+              <>
+                <a href="/#story" onClick={closeMenu}>
+                  Story
+                </a>
+                <a href="/#community" onClick={closeMenu}>
+                  Community
+                </a>
+                <a href="/shop" onClick={closeMenu}>
+                  Shop
+                </a>
+              </>
+            ) : (
+              <>
+                <a href="#story" onClick={(event) => handleNavClick(event, "story")}>
+                  Story
+                </a>
+                <a href="#community" onClick={(event) => handleNavClick(event, "community")}>
+                  Community
+                </a>
+                <a href="/shop" onClick={closeMenu}>
+                  Shop
+                </a>
+              </>
+            )}
           </nav>
         </div>
       </header>
 
-      <main id="top">
-        <section className="section section--hero" aria-labelledby="hero-title">
-          <div className="hero-placeholder" role="img" aria-label="Hero Platzhalter" ref={heroPlaceholderRef}>
-            <h1 id="hero-title" className="hero-placeholder__title" ref={heroTitleRef}>
-              <span className="hero-placeholder__base">90</span>
-              <span className="hero-placeholder__strong">FUENF</span>
-              <span className="hero-placeholder__base">DREIZEHN</span>
-            </h1>
-          </div>
-        </section>
+      <main id="top" className={isShopPage ? "main--subpage" : ""}>
+        {isShopPage ? (
+          <SpreadshopSection showHeader={false} isShopPage />
+        ) : (
+          <>
+            <section className="section section--hero" aria-labelledby="hero-title">
+              <div className="hero-placeholder">
+                <img
+                  src="/zirndorf_view.jpeg"
+                  alt="90FuenfDreizehn Hero Motiv"
+                  className="hero-placeholder__image"
+                />
+                <div className="hero-placeholder__veil" aria-hidden="true" />
+                <h1 id="hero-title" className="hero-placeholder__title">
+                  <span>Deine Stadt.</span>
+                  <span>Deine Brand.</span>
+                </h1>
+              </div>
+            </section>
 
-        <section id="story" className="section" aria-labelledby="story-title">
-          <div className="container">
-            <header className="section-header">
-              <h2 id="story-title">Warum 90FuenfDreizehn?</h2>
-              <p>Eine Identitaetsmarke: Zuhause tragen. Zirndorf zeigen. Zusammen gehoeren.</p>
-            </header>
+            <section id="story" className="section" aria-labelledby="story-title">
+              <div className="container">
+                <header className="section-header">
+                  <h2 id="story-title">Warum 90FuenfDreizehn?</h2>
+                  <p>Eine Identitaetsmarke: Zuhause tragen. Zirndorf zeigen. Zusammen gehoeren.</p>
+                </header>
 
-            <div className="grid grid--3">
-              {storyCards.map((card) => (
-                <article className="card" key={card.title}>
-                  <h3>{card.title}</h3>
-                  <p>{card.text}</p>
-                  <Placeholder label={card.placeholder} height={220} />
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="community" className="section" aria-labelledby="community-title">
-          <div className="container">
-            <header className="section-header">
-              <h2 id="community-title">Zirndorfer tragen 90FuenfDreizehn</h2>
-            </header>
-
-            <article className="card">
-              <div className="community-head">
-                <div>
-                  <h3>#90FuenfDreizehn</h3>
-                  <p>Poste dein Outfit in Zirndorf und tagge uns! Werde Teil der Community!</p>
+                <div className="grid grid--3">
+                  {storyCards.map((card) => (
+                    <article className="card" key={card.title}>
+                      <h3>{card.title}</h3>
+                      <p>{card.text}</p>
+                      <Placeholder label={card.placeholder} height={220} />
+                    </article>
+                  ))}
                 </div>
-                <a className="button button--secondary" href="#shop">
-                  Jetzt mitmachen
-                </a>
               </div>
+            </section>
 
-              <div className="grid grid--community">
-                <InstagramPost permalink="https://www.instagram.com/p/DVWrnTcjjFa/?utm_source=ig_embed&utm_campaign=loading?theme=dark" />
-                <InstagramPost permalink="https://www.instagram.com/p/DVWsWWHjnOE/?utm_source=ig_embed&utm_campaign=loading" />
-                <Placeholder label="INSTAGRAM POST PLATZHALTER 3" height={220} />
-                <Placeholder label="INSTAGRAM POST PLATZHALTER 4" height={220} />
+            <section id="community" className="section" aria-labelledby="community-title">
+              <div className="container">
+                <header className="section-header">
+                  <h2 id="community-title">Zirndorfer tragen 90FuenfDreizehn</h2>
+                </header>
+
+                <article className="card">
+                  <div className="community-head">
+                    <div>
+                      <h3>#90FuenfDreizehn</h3>
+                      <p>Poste dein Outfit in Zirndorf und tagge uns! Werde Teil der Community!</p>
+                    </div>
+                    <a className="button button--secondary" href="/shop">
+                      Jetzt mitmachen
+                    </a>
+                  </div>
+
+                  <div className="grid grid--community">
+                    <InstagramPost permalink="https://www.instagram.com/p/DVWrnTcjjFa/?utm_source=ig_embed&utm_campaign=loading?theme=dark" />
+                    <InstagramPost permalink="https://www.instagram.com/p/DVWsWWHjnOE/?utm_source=ig_embed&utm_campaign=loading" />
+                    <Placeholder label="INSTAGRAM POST PLATZHALTER 3" height={220} />
+                    <Placeholder label="INSTAGRAM POST PLATZHALTER 4" height={220} />
+                  </div>
+
+                  <div className="spacer" />
+                  <Placeholder label="VIDEO PLATZHALTER (Reel: 90513 Montage / Event)" height={320} />
+                </article>
               </div>
-
-              <div className="spacer" />
-              <Placeholder label="VIDEO PLATZHALTER (Reel: 90513 Montage / Event)" height={320} />
-            </article>
-          </div>
-        </section>
-
-        <SpreadshopSection />
+            </section>
+          </>
+        )}
 
       </main>
 
-      <footer className="footer">
-        <div className="container">
-          <div className="footer-grid">
-            <div>
-              <div className="brand footer-brand">
-                <img src="/logo_light.png" alt="90FuenfDreizehn" className="brand__logo brand__logo--footer" />
+      {!isShopPage ? (
+        <footer className="footer">
+          <div className="container">
+            <div className="footer-grid">
+              <div>
+                <div className="brand footer-brand">
+                  <img src="/logo_light.png" alt="90FuenfDreizehn" className="brand__logo brand__logo--footer" />
+                </div>
+                <p className="footer-copy">Aus Zirndorf. Fuer Zirndorf. Eine Marke fuer Buerger & Gaeste.</p>
               </div>
-              <p className="footer-copy">Aus Zirndorf. Fuer Zirndorf. Eine Marke fuer Buerger & Gaeste.</p>
+
+              <div>
+                <h3 className="footer-title">Links</h3>
+                <a href="/shop">Shop</a>
+                <a href="/#story">Story</a>
+                <a href="/#community">Community</a>
+              </div>
+
+              <div>
+                <h3 className="footer-title">Rechtliches</h3>
+                <a href="/impressum">Impressum (Platzhalter)</a>
+                <a href="/datenschutz">Datenschutz (Platzhalter)</a>
+              </div>
             </div>
 
-            <div>
-              <h3 className="footer-title">Links</h3>
-              <a href="#shop">Shop</a>
-              <a href="#story">Story</a>
-              <a href="#community">Community</a>
-            </div>
-
-            <div>
-              <h3 className="footer-title">Rechtliches</h3>
-              <a href="/impressum">Impressum (Platzhalter)</a>
-              <a href="/datenschutz">Datenschutz (Platzhalter)</a>
+            <div className="footer-bottom">
+              <span>(c) {currentYear} 90FuenfDreizehn</span>
+              <span>Made for 90513</span>
             </div>
           </div>
-
-          <div className="footer-bottom">
-            <span>(c) {currentYear} 90FuenfDreizehn</span>
-            <span>Made for 90513</span>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      ) : null}
     </div>
   );
 }
