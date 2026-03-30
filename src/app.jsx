@@ -181,6 +181,38 @@ export default function App() {
     };
   }, [isImpressumOpen]);
 
+  useEffect(() => {
+    if (isShopPage) {
+      return undefined;
+    }
+
+    const scrollToCurrentHash = () => {
+      const hash = window.location.hash.replace(/^#/, "");
+      if (!hash) {
+        return;
+      }
+
+      const target = document.getElementById(hash);
+      if (!target) {
+        return;
+      }
+
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const behavior = prefersReducedMotion ? "auto" : "smooth";
+
+      requestAnimationFrame(() => {
+        target.scrollIntoView({ behavior, block: "start" });
+      });
+    };
+
+    scrollToCurrentHash();
+    window.addEventListener("hashchange", scrollToCurrentHash);
+
+    return () => {
+      window.removeEventListener("hashchange", scrollToCurrentHash);
+    };
+  }, [isShopPage]);
+
   const handleNavClick = (event, targetId) => {
     event.preventDefault();
     closeMenu();
@@ -264,14 +296,16 @@ export default function App() {
         ) : (
           <>
             <section className="section section--hero" aria-labelledby="hero-title">
-              <div className="hero-placeholder">
+              <div className="hero-banner">
                 <img
-                  src="/zirndorf_view.jpeg"
+                  src="/skyline_zirndorf.jpg"
                   alt="90FuenfDreizehn Hero Motiv"
-                  className="hero-placeholder__image"
+                  className="hero-banner__image"
+                  width="2750"
+                  height="1200"
                 />
-                <div className="hero-placeholder__veil" aria-hidden="true" />
-                <h1 id="hero-title" className="hero-placeholder__title">
+                <div className="hero-banner__veil" aria-hidden="true" />
+                <h1 id="hero-title" className="hero-banner__title">
                   <span>Deine Stadt.</span>
                   <span>Deine Brand.</span>
                 </h1>
