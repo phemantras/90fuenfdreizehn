@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./app.css";
 
 const SPREADSHOP = {
@@ -27,6 +27,218 @@ const aboutUsCards = [
     placeholder: "BILD PLATZHALTER (Souvenir vibe: Cap/Bag/Sticker)",
   },
 ];
+
+const SPIKE_START_SHAPES = [
+  [
+    [223.35, 433.3],
+    [306, 254.7],
+    [388.65, 433.3],
+    [388.65, 433.3],
+    [306, 433.3],
+    [223.35, 433.3],
+  ],
+  [
+    [397.35, 433.3],
+    [480, 254.7],
+    [562.65, 433.3],
+    [562.65, 433.3],
+    [480, 433.3],
+    [397.35, 433.3],
+  ],
+  [
+    [571.35, 433.3],
+    [653.3, 254.7],
+    [736.9, 433.3],
+    [736.9, 433.3],
+    [653.3, 433.3],
+    [571.35, 433.3],
+  ],
+];
+
+const SPIKE_REVEAL_SHAPES = [
+  [
+    [108, 432],
+    [244, 190],
+    [386, 432],
+    [334, 432],
+    [244, 284],
+    [156, 432],
+  ],
+  [
+    [338, 432],
+    [474, 188],
+    [614, 432],
+    [562, 432],
+    [474, 278],
+    [386, 432],
+  ],
+  [
+    [566, 432],
+    [712, 194],
+    [852, 432],
+    [800, 432],
+    [712, 286],
+    [622, 432],
+  ],
+];
+
+const SPIKE_START_COLOR = "#fff";
+const SPIKE_END_COLORS = ["#f8f8f8", "#ff0000", "#009a00"];
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function lerp(start, end, progress) {
+  return start + (end - start) * progress;
+}
+
+function easeInOut(progress) {
+  return 0.5 - 0.5 * Math.cos(Math.PI * progress);
+}
+
+function interpolateShape(start, end, progress) {
+  return start
+    .map(([startX, startY], index) => {
+      const [endX, endY] = end[index];
+      return `${lerp(startX, endX, progress)},${lerp(startY, endY, progress)}`;
+    })
+    .join(" ");
+}
+
+function mixColor(startHex, endHex, progress) {
+  const normalizeHex = (hex) => {
+    const value = hex.replace("#", "");
+    return value.length === 3 ? value.split("").map((char) => char + char).join("") : value;
+  };
+
+  const start = normalizeHex(startHex);
+  const end = normalizeHex(endHex);
+  const channels = [0, 2, 4].map((offset) => {
+    const startValue = Number.parseInt(start.slice(offset, offset + 2), 16);
+    const endValue = Number.parseInt(end.slice(offset, offset + 2), 16);
+    return Math.round(lerp(startValue, endValue, progress));
+  });
+
+  return `rgb(${channels.join(" ")})`;
+}
+
+function FrankenrechenMorph() {
+  const rootRef = useRef(null);
+  const [progress, setProgress] = useState(0);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [hasEnteredViewport, setHasEnteredViewport] = useState(false);
+  const finalProgress = 0.78;
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updatePreference = () => setPrefersReducedMotion(mediaQuery.matches);
+    updatePreference();
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener("change", updatePreference);
+      return () => mediaQuery.removeEventListener("change", updatePreference);
+    }
+
+    mediaQuery.addListener(updatePreference);
+    return () => mediaQuery.removeListener(updatePreference);
+  }, []);
+
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setHasEnteredViewport(true);
+      return undefined;
+    }
+
+    if (hasEnteredViewport || !rootRef.current) {
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.98) {
+          setHasEnteredViewport(true);
+          observer.disconnect();
+        }
+      },
+      {
+        threshold: [0.98, 1],
+      }
+    );
+
+    observer.observe(rootRef.current);
+
+    return () => observer.disconnect();
+  }, [hasEnteredViewport, prefersReducedMotion]);
+
+  useEffect(() => {
+    if (!hasEnteredViewport) {
+      return undefined;
+    }
+
+    if (prefersReducedMotion) {
+      setProgress(finalProgress);
+      return undefined;
+    }
+
+    const morphDuration = 6200;
+    let frameId;
+    let startTime = null;
+
+    const tick = (now) => {
+      if (startTime === null) {
+        startTime = now;
+      }
+
+      const elapsed = now - startTime;
+      const rawProgress = elapsed >= morphDuration ? 1 : elapsed / morphDuration;
+      const nextProgress = Math.min(rawProgress, finalProgress);
+      setProgress(nextProgress);
+
+      if (nextProgress < finalProgress) {
+        frameId = window.requestAnimationFrame(tick);
+      }
+    };
+
+    frameId = window.requestAnimationFrame(tick);
+    return () => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+      }
+    };
+  }, [finalProgress, hasEnteredViewport, prefersReducedMotion]);
+
+  const dissolveProgress = easeInOut(clamp(progress / 0.5, 0, 1));
+  const spikeProgress = easeInOut(clamp((progress - 0.08) / 0.62, 0, 1));
+  const shieldOpacity = lerp(1, 0, easeInOut(clamp((progress - 0.1) / 0.56, 0, 1)));
+  const imageScale = lerp(1, 0.985, dissolveProgress);
+  const imageShiftY = lerp(0, 8, dissolveProgress);
+  const spikeOpacity = lerp(1, 1, progress);
+
+  return (
+    <div ref={rootRef} className="morph-showcase" aria-hidden="true">
+      <svg className="morph-showcase__svg" viewBox="0 0 960 760" role="presentation">
+        <g
+          opacity={shieldOpacity}
+          transform={`translate(0 ${imageShiftY}) scale(${imageScale})`}
+          transformOrigin="480 352"
+        >
+          <image href="/Frankenrechen.svg" x="210" y="42" width="540" height="623.25" preserveAspectRatio="xMidYMid meet" />
+        </g>
+
+        <g opacity={spikeOpacity}>
+          {SPIKE_START_SHAPES.map((shape, index) => (
+            <polygon
+              key={`overlay-${SPIKE_END_COLORS[index]}`}
+              points={interpolateShape(shape, SPIKE_REVEAL_SHAPES[index], spikeProgress)}
+              fill={mixColor(SPIKE_START_COLOR, SPIKE_END_COLORS[index], spikeProgress)}
+            />
+          ))}
+        </g>
+      </svg>
+    </div>
+  );
+}
 
 function Placeholder({ label, height = 280 }) {
   return (
@@ -332,6 +544,17 @@ export default function App() {
                     </article>
                   ))}
                 </div>
+              </div>
+            </section>
+
+            <section className="section section--morph" aria-labelledby="brand-morph-title">
+              <div className="container">
+                <header className="section-header">
+                  <h2 id="brand-morph-title">Fraenkische Identitaet</h2>
+                  <p>Der Frankenrechen in unserem Logo ist mehr als ein Symbol – er ist das verbindende Element zwischen regionaler Identität und urbanem Lifestyle.<br />
+                  Ein Design, das unsere Stadt repräsentiert: modern, selbstbewusst und tief verwurzelt. So verschmilzt Tradition mit Gegenwart – sichtbar auf jedem Piece, tragbar im Alltag.</p>
+                </header>
+                <FrankenrechenMorph />
               </div>
             </section>
 
